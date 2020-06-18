@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 #ifdef(WIN32)
 set(CMAKE_CUDA_COMPILER "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.0/bin/nvcc.exe")
 #elif(UNIX)
 set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
+include_directories(/usr/local/cuda/include)
 #endif
 project(CuckooHashing LANGUAGES CUDA CXX)
 
