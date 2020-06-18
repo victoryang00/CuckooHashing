@@ -1,5 +1,5 @@
 #include "cudaMain.h"
-#include "cuckoo.h"
+#include "cuckoo.cuh"
 
 using namespace std;
 

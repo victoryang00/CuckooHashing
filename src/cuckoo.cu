@@ -6,14 +6,10 @@
 #include <cmath>
 #include <chrono>
 #include <ctime>
-#include "cuckoo.h"
+#include "cuckoo.cuh"
 #include "cudaHeaders.h"
 
 using namespace std;
-/* Cuckoo hashing CPU version */
-
-
-
 
 /* Randomize Generation */
 void rand_gen(int *vals, const int n) {
@@ -31,4 +27,11 @@ void rand_gen(int *vals, const int n) {
 }
 
 /* Single gpu implementation */
+template <typename T>
+static inline __device__ int
+hash(const T val, const CuckooHashing<T>::CuckooConf config, const int func_idx,
+        const int size) {
+    CuckooHashing<T>::CuckooConf funcConfig = config[index];
+    return ((val ^ funcConfig.rv) >> funcConfig.ss) % size;
+}
 
