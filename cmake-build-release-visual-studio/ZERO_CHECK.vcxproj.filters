@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\yangy\CLionProjects\CuckooHashing\cmake-build-release-visual-studio\CMakeFiles\7aa96e70e564b8bd81c274c80751fd93\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{CACAF4F6-F489-3EA1-AC3F-B47AA2299827}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

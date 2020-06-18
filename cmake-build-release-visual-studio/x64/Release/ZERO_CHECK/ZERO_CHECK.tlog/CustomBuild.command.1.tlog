@@ -1,0 +1,10 @@
+^C:\USERS\YANGY\CLIONPROJECTS\CUCKOOHASHING\CMAKE-BUILD-RELEASE-VISUAL-STUDIO\CMAKEFILES\7AA96E70E564B8BD81C274C80751FD93\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\JetBrains\CLion 2019.3.3\bin\cmake\win\bin\cmake.exe" -SC:/Users/yangy/CLionProjects/CuckooHashing -BC:/Users/yangy/CLionProjects/CuckooHashing/cmake-build-release-visual-studio --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/yangy/CLionProjects/CuckooHashing/cmake-build-release-visual-studio/CuckooHashing.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
