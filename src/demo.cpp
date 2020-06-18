@@ -1,6 +1,7 @@
 #include <map>
 #include <cstdlib>
 #include <cmath>
+#include <chrono>
 #include <cstdint>
 #include "cudaHeaders.h"
 #include "cuckoo.cuh"
