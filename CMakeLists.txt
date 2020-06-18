@@ -36,10 +36,13 @@ IF (CUCKOO_MUL_CPU)
     find_package(MPI REQUIRED)
     # Backwards compatibility
     include_directories(${MPI_INCLUDE_PATH})
+    message(STATUS "MPI acceleration is ON")
 ELSEIF (CUCKOO_GPU)
     option(CUCKOO_GPU "select to use specified function" ON)
+    message(STATUS "GPU acceleration is ON")
 ELSEIF (CUCKOO_MUL_GPU)
     option(CUCKOO_MUL_GPU "select to use specified function" ON)
+    message(STATUS "Multi-level GPU acceleration is ON")
 ENDIF ()
 
 IF (DEBUG)
@@ -49,6 +52,10 @@ ENDIF ()
 IF (DEMO)
     option(DEMO "select to use specified function" ON)
 ENDIF ()
+
+# Show the user their settings
+message(STATUS "DEBUG is ${DEBUG}")
+message(STATUS "DEMO is ${DEMO}")
 
 # ========================================================================== #
 # source code
