@@ -30,6 +30,9 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CUDA_ARCH}")
 ##################################################
 option(CUCKOO_CPU "select to use specified function" ON)
 #ifdef(CUCKOO_CPU)
+find_package(MPI REQUIRED)
+# Backwards compatibility
+include_directories(${MPI_INCLUDE_PATH})
 #elif(CUCKOO_GPU)
 option(CUCKOO_GPU "select to use specified function" ON)
 #elif(CUCKOO_MUL_GPU)

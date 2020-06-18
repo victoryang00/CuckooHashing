@@ -8,7 +8,7 @@
 #define ERROR_DEPTH (-1)
 
 #define BLOCK_SIZE (512)
-#define LIMIT (0x1 << 30)
+#define LIMIT (0x1 << 20)
 
 int cudaMain(int argc, char **argv);
 

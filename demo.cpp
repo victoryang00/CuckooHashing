@@ -6,8 +6,7 @@
 #include "cuckoo.h"
 #include "cudaMain.h"
 using namespace std;
-
+#ifdef CUCKOO_GPU
 int main(){
-#ifdef CUCKOO_CPU
-#endif
 }
+#endif
