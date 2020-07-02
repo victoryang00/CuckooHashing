@@ -15,7 +15,7 @@ using namespace std;
 typedef struct {
     int rv;     // Randomized XOR value.
     int ss;     // Randomized shift filter start position.
-} CuckooConf;
+} CuckooConfre;
 
 /* Randomize Generation */
 void rand_gen(int *vals, const int n) {
@@ -35,8 +35,8 @@ void rand_gen(int *vals, const int n) {
 /* Single gpu implementation */
 #ifdef CUCKOO_GPU
 template <typename T>
-static inline __device__ int hash1(const T val, const CuckooConf *const config, const int index, const int size) {
-    CuckooConf func_config = config[index];
+static inline __device__ int hash1(const T val, const CuckooConfre *const config, const int index, const int size) {
+    CuckooConfre func_config = config[index];
     return ((val ^ func_config.rv) >> func_config.ss) % size;
 }
 
@@ -54,7 +54,7 @@ template <typename T> static inline __device__ int fetch_func(const T data, cons
 
 template <typename T>
 __global__ void cuckooInsertKernel(const T *const vals, const int n, T *const data, const int size,
-                                   const CuckooConf *const config, const int num, const int bound, const int position,
+                                   const CuckooConfre *const config, const int num, const int bound, const int width,
                                    int *const rehash_requests) {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     // Only threads within range are active.
@@ -66,10 +66,10 @@ __global__ void cuckooInsertKernel(const T *const vals, const int n, T *const da
         // Start the test-kick-and-reinsert loops.
         do {
             int pos = hash1(cur_val, config, cur_func, size);
-            T old_data = atomicExch(&data[cur_func * size + pos], make(cur_val, cur_func, position));
+            T old_data = atomicExch(&data[cur_func * size + pos], make(cur_val, cur_func, width));
             if (old_data != EMPTY_CELL) {
-                cur_val = fetch_val(old_data, position);
-                cur_func = (fetch_func(old_data, position) + 1) % num;
+                cur_val = fetch_val(old_data, width);
+                cur_func = (fetch_func(old_data, width) + 1) % num;
                 evict_count++;
             } else
                 return;
@@ -84,18 +84,18 @@ template <typename T> int CuckooHashing<T>::insert(const T * vals, const int n, 
     // Allocate GPU memory space.
     T *d_vals;
     T *d_data;
-    CuckooConf *d_config;
+    CuckooConfre *d_config;
     int rehash_requests = 0;
     int *d_rehash_requests;
     cudaMalloc((void **) &d_vals, n * sizeof(T));
     cudaMalloc((void **) &d_data, (num * size) * sizeof(T));
-    cudaMalloc((void **) &d_config, num * sizeof(CuckooConf));
+    cudaMalloc((void **) &d_config, num * sizeof(CuckooConfre));
     cudaMalloc((void **) &d_rehash_requests, sizeof(int));
 
     // Copy values onto GPU memory.
     cudaMemcpy(d_vals, vals, n * sizeof(T), cudaMemcpyHostToDevice);
     cudaMemcpy(d_data, data, (num * size) * sizeof(T), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_config, config, num * sizeof(CuckooConf),
+    cudaMemcpy(d_config, config, num * sizeof(CuckooConfre),
                cudaMemcpyHostToDevice);
     cudaMemcpy(d_rehash_requests, &rehash_requests, sizeof(int), cudaMemcpyHostToDevice);
 
@@ -103,12 +103,11 @@ template <typename T> int CuckooHashing<T>::insert(const T * vals, const int n, 
     cuckooInsertKernel<<<ceil((double) n / BLOCK_SIZE), BLOCK_SIZE>>>(d_vals, n,
                                                                       d_data, size,
                                                                       d_config, num,
-                                                                      bound, position,
+                                                                      bound, width,
                                                                       d_rehash_requests);
 
     // If need rehashing, do rehash with original data + VALS. Else, retrieve results into data.
     cudaMemcpy(&rehash_requests, d_rehash_requests, sizeof(int), cudaMemcpyDeviceToHost);
-    cout<<"sb"<<endl;
     if (rehash_requests > 0) {
         cudaFree(d_vals);
         cudaFree(d_data);
@@ -121,6 +120,9 @@ template <typename T> int CuckooHashing<T>::insert(const T * vals, const int n, 
             return beneath + 1;
     } else {
         cudaMemcpy(data, d_data, (num * size) * sizeof(T), cudaMemcpyDeviceToHost);
+        // for (int i = 0; i < sizeof(data) / sizeof(T); i++) {
+        //     cout << data[i];
+        // }
         cudaFree(d_vals);
         cudaFree(d_data);
         cudaFree(d_config);
@@ -138,8 +140,8 @@ template <typename T>
 __global__ void
 cuckooDeleteKernel(const T * const vals, const int n,
                    T * const data, const int size,
-                   const CuckooConf * const config, const int num,
-                   const int position) {
+                   const CuckooConfre * const config, const int num,
+                   const int width) {
 
     // Get thread index.
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -148,8 +150,8 @@ cuckooDeleteKernel(const T * const vals, const int n,
     if (idx < n) {
         T val = vals[idx];
         for (int i = 0; i < num; ++i) {
-            int pos = do_hash(val, config, i, size);
-            if (fetch_val(data[i * size + pos], position) == val) {
+            int pos = hash1(val, config, i, size);
+            if (fetch_val(data[i * size + pos], width) == val) {
                 data[i * size + pos] = EMPTY_CELL;
                 return;
             }
@@ -162,22 +164,22 @@ template <typename T> void CuckooHashing<T>::del(const T *const vals, const int 
     // Allocate GPU memory space.
     T *d_vals;
     T *d_data;
-    CuckooConf *d_config;
+    CuckooConfre *d_config;
     cudaMalloc((void **) &d_vals, n * sizeof(T));
     cudaMalloc((void **) &d_data, (num * size) * sizeof(T));
-    cudaMalloc((void **) &d_config, num * sizeof(CuckooConf));
+    cudaMalloc((void **) &d_config, num * sizeof(CuckooConfre));
 
     // Copy values onto GPU memory.
     cudaMemcpy(d_vals, vals, n * sizeof(T), cudaMemcpyHostToDevice);
     cudaMemcpy(d_data, data, (num * size) * sizeof(T), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_config, config, num * sizeof(CuckooConf),
+    cudaMemcpy(d_config, config, num * sizeof(CuckooConfre),
                cudaMemcpyHostToDevice);
 
     // Launch the delete kernel.
     cuckooDeleteKernel<<<ceil((double) n / BLOCK_SIZE), BLOCK_SIZE>>>(d_vals, n,
                                                                       d_data, size,
                                                                       d_config, num,
-                                                                      position);
+                                                                      width);
 
     // Retrieve results.
     cudaMemcpy(data, d_data, (num * size) * sizeof(T), cudaMemcpyDeviceToHost);
@@ -188,14 +190,9 @@ template <typename T> void CuckooHashing<T>::del(const T *const vals, const int 
     cudaFree(d_config);
 }
 
-/**
- *
- * Cuckoo: lookup operation (kernel + host function).
- *
- */
 template <typename T>
 __global__ void cuckooLookupKernel(const T *const vals, bool *const results, const int n, const T *const data,
-                                   const int size, const CuckooConf *const config, const int num, const int position) {
+                                   const int size, const CuckooConfre *const config, const int num, const int width) {
 
     // Get thread index.
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -204,8 +201,8 @@ __global__ void cuckooLookupKernel(const T *const vals, bool *const results, con
     if (idx < n) {
         T val = vals[idx];
         for (int i = 0; i < num; ++i) {
-            int pos = do_hash(val, config, i, size);
-            if (fetch_val(data[i * size + pos], position) == val) {
+            int pos = hash1(val, config, i, size);
+            if (fetch_val(data[i * size + pos], width) == val) {
                 results[idx] = true;
                 return;
             }
@@ -215,28 +212,27 @@ __global__ void cuckooLookupKernel(const T *const vals, bool *const results, con
 }
 
 template <typename T> void CuckooHashing<T>::lookup(const T *const vals, bool *const results, const int n) {
-
     // Allocate GPU memory space.
     T *d_vals;
     T *d_data;
     bool *d_results;
-    CuckooConf *d_config;
+    CuckooConfre *d_config;
     cudaMalloc((void **) &d_vals, n * sizeof(T));
     cudaMalloc((void **) &d_results, n * sizeof(bool));
     cudaMalloc((void **) &d_data, (num * size) * sizeof(T));
-    cudaMalloc((void **) &d_config, num * sizeof(CuckooConf));
+    cudaMalloc((void **) &d_config, num * sizeof(CuckooConfre));
 
     // Copy values onto GPU memory.
     cudaMemcpy(d_vals, vals, n * sizeof(T), cudaMemcpyHostToDevice);
     cudaMemcpy(d_data, data, (num * size) * sizeof(T), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_config, config, num * sizeof(CuckooConf),
+    cudaMemcpy(d_config, config, num * sizeof(CuckooConfre),
                cudaMemcpyHostToDevice);
 
     // Launch the lookup kernel.
     cuckooLookupKernel<<<ceil((double) n / BLOCK_SIZE), BLOCK_SIZE>>>(d_vals, d_results, n,
                                                                       d_data, size,
                                                                       d_config, num,
-                                                                      position);
+                                                                      width);
 
     // Retrieve results.
     cudaMemcpy(results, d_results, n * sizeof(bool), cudaMemcpyDeviceToHost);

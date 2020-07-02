@@ -6,9 +6,12 @@
 #include <iostream>
 #include "cudaHeaders.h"
 #include "cuckoo.cuh"
+#include "cuckoo.cu"
+
 using namespace std;
 #define DEMO
 #define DEBUG
+#define CUCKOO_GPU
 #ifdef DEMO
 int main(){
     int repeat = 100;
@@ -73,30 +76,34 @@ int main(){
     CuckooHashing<int> table_cuda(8, 4 * ceil(log2((double)8)), 3);
     table_cuda.show();
 
-    std::cout << "Insert 8 values -" << std::endl;
+    cout << "Insert 8 values -";
     int vals_to_insert[8];
     rand_gen(vals_to_insert, 8);
+    for (int i = 0; i < 8; i++) {
+        std::cout << vals_to_insert[i] << " ";
+    }
+    std::cout<< std::endl;
     table_cuda.insert(vals_to_insert, 8, 0);
     table_cuda.show();
 
-    std::cout << "Delete values [0..4] -" << std::endl;
-    int vals_to_delete[4];
-    for (int i = 0; i < 4; ++i)
-        vals_to_delete[i] = vals_to_insert[i];
-    table_cuda.del(vals_to_delete, 4);
-    table_cuda.show();
+    // std::cout << "Delete values [0..4] -" << std::endl;
+    // int vals_to_delete[4];
+    // for (int i = 0; i < 4; ++i)
+    //     vals_to_delete[i] = vals_to_insert[i];
+    // table_cuda.del(vals_to_delete, 4);
+    // table_cuda.show();
 
-    std::cout << "Lookup values [2..6] -" << std::endl;
-    int vals_to_lookup[4];
-    for (int i = 0; i < 4; ++i)
-        vals_to_lookup[i] = vals_to_insert[i + 2];
-    bool results[4];
-    table_cuda.lookup(vals_to_lookup, results, 4);
-    std::cout << "Results - ";
-    for (int i = 0; i < 4; ++i)
-        std::cout << results[i] << " ";
-    std::cout << std::endl;
-    table_cuda.show();
+    // std::cout << "Lookup values [2..6] -" << std::endl;
+    // int vals_to_lookup[4];
+    // for (int i = 0; i < 4; ++i)
+    //     vals_to_lookup[i] = vals_to_insert[i + 2];
+    // bool results[4];
+    // table_cuda.lookup(vals_to_lookup, results, 4);
+    // std::cout << "Results - ";
+    // for (int i = 0; i < 4; ++i)
+    //     std::cout << results[i] << " ";
+    // std::cout << std::endl;
+    // table_cuda.show();
 
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
     double time = chrono::duration_cast<chrono::microseconds>(end - begin).count();

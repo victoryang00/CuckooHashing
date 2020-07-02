@@ -24,17 +24,24 @@
 #include <iostream>
 
 using namespace std;
-
+#ifdef CUCKOO_GPU
+/* Redefine CuckooConf outside struct */
+typedef struct {
+    int rv;     // Randomized XOR value.
+    int ss;     // Randomized shift filter start position.
+} CuckooConf;
+#endif
 /* class for cuckoo hash table. */
 template<typename T>
 class CuckooHashing {
 private:
+#if (!defined (CUCKOO_GPU)) && (!defined(CUCKOO_MUL_GPU))
     //basic config
     typedef struct {
         int rv;
         int ss;
     } CuckooConf;
-
+#endif
     //parameter
     int size;
     int bound;
@@ -58,18 +65,6 @@ private:
     int hash(const T val, const int i) {
         CuckooConf func_config = config[i];
         return ((val ^ func_config.rv) >> func_config.ss) % size;
-    };
-#endif
-
-    void gen() {
-        int width = 8 * sizeof(T) - ceil(log2((double) num));
-        int swidth = ceil(log2((double) size));
-        for (int i = 0; i < num; i++) {
-            if (width <= swidth)
-                config[i] = {rand(), 0};
-            else
-                config[i] = {rand(), rand() % (width - swidth + 1)};
-        }
     };
 
     //operations
@@ -102,6 +97,19 @@ private:
         }
         return level;
     };
+#endif
+
+    void gen() {
+        int width = 8 * sizeof(T) - ceil(log2((double) num));
+        int swidth = ceil(log2((double) size));
+        for (int i = 0; i < num; i++) {
+            if (width <= swidth)
+                config[i] = {rand(), 0};
+            else
+                config[i] = {rand(), rand() % (width - swidth + 1)};
+        }
+    };
+
 
 #ifdef CUCKOO_GPU
     /** Inline helper functions. */
@@ -111,7 +119,7 @@ private:
     inline int fetch_func(const T data) {
         return data & ((0x1 << width) - 1);
     }
-    int rehash(const T *val, const int n, const int depth) {
+    int rehash(const T * const val, const int n, const int depth) {
         if (depth > HASHING_DEPTH) {
             return ERROR_DEPTH;
         }
@@ -120,9 +128,9 @@ private:
         for (int i = 0; i < num; ++i) {
             for (int j = 0; j < size; i++) {
                 if (fetch_val(data[i * size + j]) != -1) {
-                    buffer.emplace_back(data[i * size + j]);
+                    buffer.emplace_back(fetch_val(data[i * size + j]));
                 }
-                data[i] = -1;
+                data[i * size + j] = -1;
             }
         }
         for (int i = 0; i < n; ++i)
@@ -140,7 +148,13 @@ public:
     //constructor
     CuckooHashing(const int size, const int bound, const int num)
         : size(size), bound(bound), num(num), width(ceil(log2((double)num))) {
+
+#if (!defined(CUCKOO_MUL_GPU)) && (!defined(CUCKOO_GPU))
         data = new T[size]();
+#endif
+#ifdef CUCKOO_GPU
+        data = new T[num * size]();
+#endif
         position = new int[size]();
         config = new CuckooConf[num + 1];
         gen();
@@ -167,7 +181,7 @@ public:
 #endif
 #ifdef CUCKOO_GPU
     // hashing insert operation, the return is the bottom of the rehashed index.
-    int insert(const T * val,const int n, const int depth);
+    int insert(const T * const val,const int n, const int depth);
 
     //hashing del operation, the return is whether is delete success.
     void del(const T * const vals, const int n);
@@ -185,11 +199,10 @@ public:
 void rand_gen(int *vals, const int n);
 
 //Implementation for CPU
-#if (!defined (CUCKOO_GPU)) || (!defined(CUCKOO_MUL_GPU))
-template<typename T>
-void CuckooHashing<T>::show() {
+#if (!defined (CUCKOO_GPU)) && (!defined(CUCKOO_MUL_GPU))
+template <typename T> void CuckooHashing<T>::show() {
     cout << "Funcs: ";
-    for (int i = 1; i <= num; ++i) {
+    for (int i = 0; i < num; ++i) {
         CuckooConf func_config = config[i];
         cout << "(" << func_config.rv << ", " << func_config.ss << ") ";
     }
@@ -202,5 +215,22 @@ void CuckooHashing<T>::show() {
     cout << endl << endl;
 };
 #endif //(!defined (CUCKOO_GPU)) || (!defined(CUCKOO_MUL_GPU))
+
+//Implementation for GPU
+template <typename T> void CuckooHashing<T>::show() {
+    cout << "Funcs: ";
+    for (int i = 0; i < num; ++i) {
+        CuckooConf func_config = config[i];
+        cout << "(" << func_config.rv << ", " << func_config.ss << ") ";
+    }
+    cout << endl;
+    for (int i = 0; i < num; ++i) {
+       cout << "Table " << i << ": ";
+        for (int j = 0; j < size; ++j)
+            cout << " " << fetch_val(data[i * size + j]) << " ";
+        cout << endl;
+    }
+    cout << endl;
+}
 
 #endif //CUDA_TEST_CLION_VECADD_H
