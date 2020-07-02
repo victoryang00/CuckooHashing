@@ -1,11 +1,16 @@
 #ifndef CUDA_TEST_CLION_VECADD_H
 #define CUDA_TEST_CLION_VECADD_H
 
-#include "cudaMain.h"
 #include "cudaHeaders.h"
 
+#define HASHING_DEPTH (100)
+#define ERROR_DEPTH (-1)
+
+#define BLOCK_SIZE (512)
+#define LIMIT (0x1 << 20)
+
 #ifdef CUCKOO_MUL_CPU
-#include <mpi.h>
+#include <omp.h>
 #endif
 
 #include <map>
@@ -13,6 +18,7 @@
 #include <cmath>
 #include <cstdint>
 #include <vector>
+#include <iostream>
 
 using namespace std;
 

@@ -1,6 +1,5 @@
-#include <chrono>
-#include "cudaMain.h"
 #include "cuckoo.cuh"
+#include <chrono>
 
 using namespace std;
 #ifndef DEMO

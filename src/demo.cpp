@@ -3,15 +3,27 @@
 #include <cmath>
 #include <chrono>
 #include <cstdint>
+#include <iostream>
 #include "cudaHeaders.h"
 #include "cuckoo.cuh"
-#include "cudaMain.h"
 using namespace std;
+#define DEMO
 #ifdef DEMO
 int main(){
     int repeat = 100;
     chrono::steady_clock::time_point begin = chrono::steady_clock::now();
-    cout << "Start Serial implementation DEMO -->" << endl;
+#ifndef CUCKOO_MUL_CPU
+    cout << "Start Serial CPU implementation DEMO -->" << endl;
+#endif
+
+#ifdef CUCKOO_MUL_CPU
+    cout << "Start Parallel CPU implementation DEMO -->" << endl;
+#endif
+
+#ifdef CUCKOO_MUL_CPU
+    cout << "Start Parallel CPU implementation DEMO -->" << endl;
+#endif
+
     for (int i = 0; i < repeat; i++) {
 #ifdef DEBUG
         cout << "Serial implementation DEMO for basic insert-->" << i << endl;
@@ -20,7 +32,7 @@ int main(){
             CuckooHashing<uint32_t> table_serial(8, 4 * ceil(log2((double) 8)), 3);
 #ifdef DEBUG
             table_serial.show();
-            cout << "Insert 8 values -" << std::endl;
+            cout << "Insert 8 values -" << endl;
 #endif
             int vals_to_insert[8];
             rand_gen(vals_to_insert, 8);
@@ -28,13 +40,13 @@ int main(){
                 table_serial.insert(vals_to_insert[i], 0);
 #ifdef DEBUG
             table_serial.show();
-            cout << "Delete values [0..4] -" << std::endl;
+            cout << "Delete values [0..4] -" << endl;
 #endif
             for (int i = 0; i < 4; ++i)
                 table_serial.del(vals_to_insert[i]);
 #ifdef DEBUG
             table_serial.show();
-            cout << "Lookup values [2..6] -" << std::endl;
+            cout << "Lookup values [2..6] -" << endl;
 #endif
             bool results[4];
             for (int i = 0; i < 4; ++i)
@@ -43,7 +55,7 @@ int main(){
             cout << "Results - ";
             for (int i = 0; i < 4; ++i)
                 cout << results[i] << " ";
-            cout << std::endl;
+            cout << endl;
             table_serial.show();
 #endif
         }

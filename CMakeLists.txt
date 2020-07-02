@@ -35,9 +35,8 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CUDA_ARCH}")
 IF (CUCKOO_MUL_CPU)
     option(CUCKOO_MUL_CPU "select to use specified function" ON)
     add_definitions(-DCUCKOO_MUL_CPU)
-    find_package(MPI REQUIRED)
+    find_package(OpenMP REQUIRED)
     # Backwards compatibility
-    include_directories(${MPI_INCLUDE_PATH})
     message(STATUS "MPI acceleration is ON")
 ELSEIF (CUCKOO_GPU)
     option(CUCKOO_GPU "select to use specified function" ON)
@@ -51,25 +50,29 @@ ENDIF ()
 
 IF (DEBUG)
     option(DEBUG "select to use specified function" ON)
+    message(STATUS "DEBUG is ${DEBUG}")
     add_definitions(-DDEBUG)
 ENDIF ()
 
 IF (DEMO)
     option(DEMO "select to use specified function" ON)
+    message(STATUS "DEMO is ${DEMO}")
     add_definitions(-DDEMO)
 ENDIF ()
 
-# Show the user their settings
-message(STATUS "DEBUG is ${DEBUG}")
-message(STATUS "DEMO is ${DEMO}")
+IF (PERF)
+    option(PERF "select to use specified function" ON)
+    message(STATUS "PERF is ${PERF}")
+    add_definitions(-DPERF)
+ENDIF ()
 
 ###############
 # source code #
 ###############
 
 set(CXX_SRCS src/demo.cpp)
-set(CUDA_SRCS src/cudaMain.cu src/cuckoo.cu)
-set(CXX_CUDA_HDR include/cudaHeaders.h include/cudaMain.h include/cuckoo.cuh)
+set(CUDA_SRCS src/cuckoo.cu)
+set(CXX_CUDA_HDR include/cudaHeaders.h include/cuckoo.cuh include/mt19937ar.h)
 
 ################
 # main program #

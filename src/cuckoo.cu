@@ -6,6 +6,7 @@
 #include <cmath>
 #include "cuckoo.cuh"
 #include "cudaHeaders.h"
+#include "mt19937ar.h"
 
 using namespace std;
 
