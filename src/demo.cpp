@@ -7,28 +7,20 @@
 #include "cudaHeaders.h"
 #include "cuckoo.cuh"
 using namespace std;
-#define CUCKOO_GPU
+#define DEMO
+#define DEBUG
 #ifdef DEMO
 int main(){
     int repeat = 100;
     chrono::steady_clock::time_point begin = chrono::steady_clock::now();
-#ifndef CUCKOO_MUL_CPU
+#if (!defined(CUCKOO_MUL_GPU)) && (!defined(CUCKOO_GPU))
+    #ifndef  CUCKOO_MUL_CPU
     cout << "Start Serial CPU implementation DEMO -->" << endl;
-#endif
-
-#ifdef CUCKOO_MUL_CPU
+    #endif
+    #ifdef  CUCKOO_MUL_CPU
     cout << "Start Parallel CPU implementation DEMO -->" << endl;
-#endif
-
-#ifdef CUCKOO_MUL_GPU
-    cout << "Start Parallel Multi GPU implementation DEMO -->" << endl;
-#endif
-
-#ifdef CUCKOO_GPU
-    cout << "Start Parallel GPU implementation DEMO -->" << endl;
-#endif
-
-    for (int i = 0; i < repeat; i++) {
+    #endif
+     for (int i = 0; i < repeat; i++) {
 #ifdef DEBUG
         cout << "Serial implementation DEMO for basic insert-->" << i << endl;
 #endif
@@ -66,7 +58,56 @@ int main(){
     }
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
     double time = chrono::duration_cast<chrono::microseconds>(end - begin).count();
-
+    #ifndef  CUCKOO_MUL_CPU
     cout << "Time for CPU serial demo = " << time / repeat / 1000 << endl;
+    #endif
+    #ifdef  CUCKOO_MUL_CPU
+    cout << "Time for CPU parallel demo = " << time / repeat / 1000 << endl;
+    #endif
+#endif
+
+
+
+#ifdef CUCKOO_GPU
+    cout << "Start Parallel GPU implementation DEMO -->" << endl;
+    CuckooHashing<int> table_cuda(8, 4 * ceil(log2((double)8)), 3);
+    table_cuda.show();
+
+    std::cout << "Insert 8 values -" << std::endl;
+    int vals_to_insert[8];
+    rand_gen(vals_to_insert, 8);
+    table_cuda.insert(vals_to_insert, 8, 0);
+    table_cuda.show();
+
+    std::cout << "Delete values [0..4] -" << std::endl;
+    int vals_to_delete[4];
+    for (int i = 0; i < 4; ++i)
+        vals_to_delete[i] = vals_to_insert[i];
+    table_cuda.del(vals_to_delete, 4);
+    table_cuda.show();
+
+    std::cout << "Lookup values [2..6] -" << std::endl;
+    int vals_to_lookup[4];
+    for (int i = 0; i < 4; ++i)
+        vals_to_lookup[i] = vals_to_insert[i + 2];
+    bool results[4];
+    table_cuda.lookup(vals_to_lookup, results, 4);
+    std::cout << "Results - ";
+    for (int i = 0; i < 4; ++i)
+        std::cout << results[i] << " ";
+    std::cout << std::endl;
+    table_cuda.show();
+
+    chrono::steady_clock::time_point end = chrono::steady_clock::now();
+    double time = chrono::duration_cast<chrono::microseconds>(end - begin).count();
+    #ifdef  CUCKOO_GPU
+    cout << "Time for GPU demo = " << time / repeat / 1000 << endl;
+    #endif
+#endif
+
+#ifdef CUCKOO_GPU
+    cout << "Start Parallel GPU implementation DEMO -->" << endl;
+#endif
+
 }
 #endif
