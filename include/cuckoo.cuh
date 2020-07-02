@@ -2,12 +2,13 @@
 #define CUDA_TEST_CLION_VECADD_H
 
 #include "cudaHeaders.h"
+#define CUCKOO_GPU
 
 #define HASHING_DEPTH (100)
 #define ERROR_DEPTH (-1)
 
 #define BLOCK_SIZE (512)
-#define LIMIT (0x1 << 20)
+#define LIMIT (0x1 << 30)
 
 #ifdef CUCKOO_MUL_CPU
 #include <omp.h>
@@ -76,6 +77,9 @@ private:
         }
         gen();
         vector<T> buffer;
+        #ifdef CUCKOO_MUL_CPU
+        #pragma omp parallel for
+        #endif
         for (int i = 0; i < size; i++) {
             if (data[i] != -1) {
                 buffer.emplace_back(data[i]);
@@ -182,6 +186,9 @@ int CuckooHashing<T>::insert(const T val, const int depth) {
     int current_func = 1;
     int count = 0;
     for (; count < bound; count++) {
+        #ifdef CUCKOO_MUL_CPU
+        #pragma omp parallel for
+        #endif
         for (int i = 0; i < num; i++) {
             int index = (current + i) % num + 1;
             int pos = hash(current, index);

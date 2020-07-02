@@ -7,7 +7,7 @@
 #include "cudaHeaders.h"
 #include "cuckoo.cuh"
 using namespace std;
-#define DEMO
+#define CUCKOO_GPU
 #ifdef DEMO
 int main(){
     int repeat = 100;
@@ -20,8 +20,12 @@ int main(){
     cout << "Start Parallel CPU implementation DEMO -->" << endl;
 #endif
 
-#ifdef CUCKOO_MUL_CPU
-    cout << "Start Parallel CPU implementation DEMO -->" << endl;
+#ifdef CUCKOO_MUL_GPU
+    cout << "Start Parallel Multi GPU implementation DEMO -->" << endl;
+#endif
+
+#ifdef CUCKOO_GPU
+    cout << "Start Parallel GPU implementation DEMO -->" << endl;
 #endif
 
     for (int i = 0; i < repeat; i++) {
@@ -63,8 +67,6 @@ int main(){
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
     double time = chrono::duration_cast<chrono::microseconds>(end - begin).count();
 
-    cout << "Time for CPU serial demo = "
-         << time / repeat / 1000
-         << endl;
+    cout << "Time for CPU serial demo = " << time / repeat / 1000 << endl;
 }
 #endif

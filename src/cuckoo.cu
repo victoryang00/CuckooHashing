@@ -9,7 +9,7 @@
 #include "mt19937ar.h"
 
 using namespace std;
-
+#define CUCKOO_GPU
 /* Redefine CuckooConf outside struct */
 typedef struct {
     int rv;     // Randomized XOR value.
@@ -21,7 +21,7 @@ void rand_gen(int *vals, const int n) {
     map<int, bool> val_map;
     int i = 0;
     while (i < n) {
-        int value = (rand() % (LIMIT - 1)) + 1;
+        int value=genrand_int31();
         if (val_map.find(value) != val_map.end()) {
             continue;
         }
