@@ -34,9 +34,11 @@ void rand_gen(int *vals, const int n) {
 
 /* Single gpu implementation */
 #ifdef CUCKOO_GPU
+// 32 bit Murmur3 hash
 template <typename T>
 static inline __device__ int hash1(const T val, const CuckooConfre *const config, const int index, const int size) {
     CuckooConfre func_config = config[index];
+    
     return ((val ^ func_config.rv) >> func_config.ss) % size;
 }
 
@@ -59,7 +61,7 @@ __global__ void cuckooInsertKernel(const T *const vals, const int n, T *const da
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     // Only threads within range are active.
     if (idx < n) {
-        // Set initial conditions.
+        // Set initial conditions.  
         T cur_val = vals[idx];
         int cur_func = 0;
         int evict_count = 0;
@@ -137,11 +139,8 @@ template <typename T> int CuckooHashing<T>::insert(const T * vals, const int n, 
  *
  */
 template <typename T>
-__global__ void
-cuckooDeleteKernel(const T * const vals, const int n,
-                   T * const data, const int size,
-                   const CuckooConfre * const config, const int num,
-                   const int width) {
+__global__ void cuckooDeleteKernel(const T *const vals, const int n, T *const data, const int size,
+                                   const CuckooConfre *const config, const int num, const int width) {
 
     // Get thread index.
     int idx = threadIdx.x + blockIdx.x * blockDim.x;

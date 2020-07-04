@@ -12,8 +12,45 @@ using namespace std;
 #define DEMO
 #define DEBUG
 #define CUCKOO_GPU
+
+
 #ifdef DEMO
 int main(){
+    cudaDeviceProp  prop;
+    int count;
+    cudaGetDeviceCount( &count ); 
+    for (int i=0; i< count; i++) {
+        cudaGetDeviceProperties( &prop, i );
+        printf( " --- General Information for device %d ---\n", i ); printf( "Name: %s\n", prop.name );
+        printf( "Compute capability: %d.%d\n", prop.major, prop.minor ); printf( "Clock rate: %d\n", prop.clockRate );
+        printf( "Device copy overlap: " );
+        if (prop.deviceOverlap)
+            printf( "Enabled\n" ); 
+        else
+            printf( "Disabled\n" );
+        printf( "Kernel execition timeout : " ); 
+        if (prop.kernelExecTimeoutEnabled)
+            printf( "Enabled\n" ); 
+        else
+            printf( "Disabled\n" );
+        printf( "   --- Memory Information for device %d ---\n", i );
+        printf( "Total global mem:  %ld\n", prop.totalGlobalMem );
+        printf( "Total constant Mem:  %ld\n", prop.totalConstMem );
+        printf( "Max mem pitch:  %ld\n", prop.memPitch );
+        printf( "Texture Alignment:  %ld\n", prop.textureAlignment );
+
+        printf( "   --- MP Information for device %d ---\n", i );
+        printf( "Multiprocessor count:  %d\n",prop.multiProcessorCount );
+        printf( "Shared mem per mp:  %ld\n", prop.sharedMemPerBlock );
+        printf( "Registers per mp:  %d\n", prop.regsPerBlock );
+        printf( "Threads in warp:  %d\n", prop.warpSize );
+        printf( "Max threads per block:  %d\n",prop.maxThreadsPerBlock );
+        printf( "Max thread dimensions:  (%d, %d, %d)\n",prop.maxThreadsDim[0], prop.maxThreadsDim[1],prop.maxThreadsDim[2] );
+        printf( "Max grid dimensions:  (%d, %d, %d)\n",prop.maxGridSize[0], prop.maxGridSize[1],prop.maxGridSize[2] );
+        printf( "\n" );
+    }
+
+
     int repeat = 100;
     chrono::steady_clock::time_point begin = chrono::steady_clock::now();
 #if (!defined(CUCKOO_MUL_GPU)) && (!defined(CUCKOO_GPU))
@@ -86,24 +123,24 @@ int main(){
     table_cuda.insert(vals_to_insert, 8, 0);
     table_cuda.show();
 
-    // std::cout << "Delete values [0..4] -" << std::endl;
-    // int vals_to_delete[4];
-    // for (int i = 0; i < 4; ++i)
-    //     vals_to_delete[i] = vals_to_insert[i];
-    // table_cuda.del(vals_to_delete, 4);
-    // table_cuda.show();
+    std::cout << "Delete values [0..4] -" << std::endl;
+    int vals_to_delete[4];
+    for (int i = 0; i < 4; ++i)
+        vals_to_delete[i] = vals_to_insert[i];
+    table_cuda.del(vals_to_delete, 4);
+    table_cuda.show();
 
-    // std::cout << "Lookup values [2..6] -" << std::endl;
-    // int vals_to_lookup[4];
-    // for (int i = 0; i < 4; ++i)
-    //     vals_to_lookup[i] = vals_to_insert[i + 2];
-    // bool results[4];
-    // table_cuda.lookup(vals_to_lookup, results, 4);
-    // std::cout << "Results - ";
-    // for (int i = 0; i < 4; ++i)
-    //     std::cout << results[i] << " ";
-    // std::cout << std::endl;
-    // table_cuda.show();
+    std::cout << "Lookup values [2..6] -" << std::endl;
+    int vals_to_lookup[4];
+    for (int i = 0; i < 4; ++i)
+        vals_to_lookup[i] = vals_to_insert[i + 2];
+    bool results[4];
+    table_cuda.lookup(vals_to_lookup, results, 4);
+    std::cout << "Results - ";
+    for (int i = 0; i < 4; ++i)
+        std::cout << results[i] << " ";
+    std::cout << std::endl;
+    table_cuda.show();
 
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
     double time = chrono::duration_cast<chrono::microseconds>(end - begin).count();

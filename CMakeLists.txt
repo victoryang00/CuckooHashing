@@ -25,7 +25,7 @@ set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 ## Special treatment for current graphical card ##
 ##################################################
 
-set(CUDA_ARCH "-arch=sm_75")
+set(CUDA_ARCH "-arch=sm_61")
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CUDA_ARCH}")
 
 ##################################################
