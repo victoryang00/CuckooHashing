@@ -113,11 +113,10 @@ for(int s=0;s<25;s++){
         auto *value = new uint32_t[size];
         auto *search = new uint32_t[size];
         auto *chck = new uint32_t[size];
+        generate_random_keyvalues(rnd, size, value);
+        generate_random_keyvalues(rnd, size, key);
         for (int percent = 0; percent <= 10; ++percent) {
             int bound = ceil((1 - 0.1 * percent) * size);
- 
-                generate_random_keyvalues(rnd, size, value);
-                generate_random_keyvalues(rnd, size, key);
                 // printf("sb");
                 for (int i = 0; i < bound; ++i) {
                     chck[i] = value[rand() % size];
@@ -182,10 +181,10 @@ for(int s=0;s<25;s++){
     for (int percent = 0; percent <= 10; ++percent) {
         int bound = ceil((1 - 0.1 * percent) * size4);
         for (int i = 0; i < bound; ++i) {
-            chck[i] = value[rand() % size];
+            chck4[i] = value4[rand() % size4];
             // cout << chck[i] << " ";
         }
-        generate_random_keyvalues(rnd, size4, chck + bound);
+        generate_random_keyvalues(rnd, size4, chck4 + bound);
         printf("Let ratios be 1.4 and bound %d we can get:", percent);
         CuckooHashing h(size4);
         h.hash_insert(key4, value4, n);
