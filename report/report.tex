@@ -1,253 +1,254 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%2345678901234567890123456789012345678901234567890123456789012345678901234567890
-%        1         2         3         4         5         6         7         8
-
-\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out
-                                                % if you need a4paper
-%\documentclass[a4paper, 10pt, conference]{ieeeconf}      % Use this line for a4
-                                                          % paper
-
-\IEEEoverridecommandlockouts                              % This command is only
-                                                          % needed if you want to
-                                                          % use the \thanks command
-\overrideIEEEmargins
-% See the \addtolength command later in the file to balance the column lengths
-% on the last page of the document
-
-
-
-% The following packages can be found on http:\\www.ctan.org
-\usepackage{graphics} % for pdf, bitmapped graphics files
-\usepackage{graphicx}
-\usepackage{listings}
-\usepackage{xcolor}
-
-\lstset { %
-    language=C++,
-    backgroundcolor=\color{black!5}, % set backgroundcolor
-    basicstyle=\footnotesize,% basic font setting
-}
-%\usepackage{epsfig} % for postscript graphics files
-%\usepackage{mathptmx} % assumes new font selection scheme installed
-%\usepackage{times} % assumes new font selection scheme installed
-%\usepackage{amsmath} % assumes amsmath package installed
-%\usepackage{amssymb}  % assumes amsmath package installed
-
-\title{\LARGE \bf
-Cuda version of Cuckoo Hashing
-}
-
-%\author{ \parbox{3 in}{\centering Huibert Kwakernaak*
-%         \thanks{*Use the $\backslash$thanks command to put information here}\\
-%         Faculty of Electrical Engineering, Mathematics and Computer Science\\
-%         University of Twente\\
-%         7500 AE Enschede, The Netherlands\\
-%         {\tt\small h.kwakernaak@autsubmit.com}}
-%         \hspace*{ 0.5 in}
-%         \parbox{3 in}{ \centering Pradeep Misra**
-%         \thanks{**The footnote marks may be inserted manually}\\
-%        Department of Electrical Engineering \\
-%         Wright State University\\
-%         Dayton, OH 45435, USA\\
-%         {\tt\small pmisra@cs.wright.edu}}
-%}
-
-\author{Yiwei Yang, Kaiy @ SIST, Shanghaitech University% <-this % stops a space
-% \thanks{*This work was not supported by any organization}% <-this % stops a space
-% \thanks{$^{1}$H. Kwakernaak is with Faculty of Electrical Engineering, Mathematics and Computer Science,
-%         University of Twente, 7500 AE Enschede, The Netherlands
-%         {\tt\small h.kwakernaak at papercept.net}}%
-% \thanks{$^{2}$P. Misra is with the Department of Electrical Engineering, Wright State University,
-%         Dayton, OH 45435, USA
-%         {\tt\small p.misra at ieee.org}}%
-}
-
-
-\begin{document}
-
-
-
-\maketitle
-\thispagestyle{empty}
-\pagestyle{empty}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% \begin{abstract}
-
-
-
-% \end{abstract}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{INTRODUCTION}
-Matrix filtering has been widely used in many applications, especially in the fields of image processing and machine learning. The time complexity of sequential execution grows quadraticly with the width of the target matrix and kernel. The contention of computational resources could be relieved by using parallel computing techniques, and OpenMP is one of them. Not until recently did OpenCV add built-in support for 3rd party multi-threading. This project identifies convolution as the major matrix filtering method, but other methods could be optimized using similar techniques. This paper reviews the theory and application of image filtering in Section II, discusses two ways to parallelize the algorithm of convolution in Section III, evaluates one of them under different conditions in Section IV.
-
-
-\section{Theory and Application of matrix filtering}
-\subsection{Brief review of matrix filtering}
-\subsubsection{Convolution}
-During convolution, two matrixes are involved. One matrix is treat by another matrix, which is called “kernel”. For each entry in the matrix to be treated, we replace the entry with the weighted sum of its neighbors. How many neighbors should be considered is determined by the size of kernel matrix. The weight of each neighbor entry considered, is determined by the value of corresponding entry in kernel matrix. Equation (1) demonstrate the procedure of convolution.
-\begin{equation}
-	(f*g)[m,n] = \sum_{k,l}f[m-k,n-l]g[k,l]
-\end{equation}
-\subsubsection{Median filtering} It is done by looking at the m*m neighbours, and replacing the entry with the median.
-\subsection{Applications in computer vision}
-Pictures in computer vision are stored as matrixes. Matrix filtering can help remove noise, Sharpening the image, blur the image, and so on. For example, for Salt-and-papper noise, median filter can have a very good effect. Figure one showed an experiment done in CV \cite{c1}.
-\begin{figure}
-  \centering
-	\includegraphics[width=3.4in]{denoise.png}
-  \caption{Example of median filtering}\label{fig:digit}
-\end{figure}
-\subsection{Applications in machine learning}
-\paragraph{Convolutional Neural Network(CNN)}
-One advantage of CNN is that, instead of complicated preprocessing of the picture, the neural networks can directly input the origin picture. This advantage is achieved by convolution operation.
-\subsection{Applications in Real-time application}
-\paragraph{Mobile App}
-Many image processing apps on mobile, particularly selfie apps, requires matrix filtering as a key functionality. To achieve different effects of selfie, the real-time procedure is actually linear combinations of many filtering operations. An interesting example is shown in Figure 2: By adding the original image with a gaussian-blurred image, we can produce a hybrid image\cite{c2}. The formula is shown in Equation (2). When observing far away from the image, we see a different expression of the person compared to seeing the image at a close distance.  Since modern cameras on mobile phones usually produces high-definition image like 2K or even 4K, many real-time apps have low frame rate, typically 10fps - 25fps.
-\begin{equation}
-	f + \alpha(f - f*g)
-\end{equation}
-\begin{figure}
-  \centering
-	\includegraphics[width=3.4in]{hyb.png}
-  \caption{Example of hybrid image}\label{fig:digit}
-\end{figure}
-\paragraph{Real-time AR}
-Video See-through HMD (Head-mounted displays) is one popular implementation of Real-time AR, which involves video processing. Treatment for each frame of the video can involve several matrix filtering operations.
-
-
-
-\section{Choice of algorithm}
-
-This project identifies convolution as the major matrix filtering method, but other methods could be optimized using similar techniques. We are going to discusses two parallelizable algorithms on convolution in this Section. For the simplicity of discussion, suppose we have a square matrix $M_{m*m}$ that serves as the signal or target for the convolution, and a square matrix $K_{k*k}$ that serves as the kernel. We denote the outcome matrix as matrix $X_{m*m}$. We ignore the padding stuff that happens at the boundary of matrices. 
-
-\subsection{Propagation-based method}
-For each entry (i, j) in the signal matrix M, it affects the outcome matrix X by k*k neighbour entries that surrounds (i, j). The kernel could be viewed as the weight of how much the entry affect the surrounding entries. Based on this fact, we propagate the entry (i, j) in the signal matrix M by multiplying the weighting factors and add them respectively to  k*k neighbours in outcome matrix.
-We present the pseudo code to illustrate the algorithm.
-
-\begin{lstlisting}
-for each entry [m][n] {
-  for (int i=-k/2; i<= k/2; i++){
-    for (int j=-k/2; j<= k/2; j++){
-      X[m-i][n-j] += M[m][n]*K[i][j]
+%%%%%%%%%%%%%%%%% DO NOT CHANGE HERE %%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%{
+    \documentclass[twoside,11pt]{article}
+    %%%%% PACKAGES %%%%%%
+    \usepackage{pgm2016}
+    \usepackage{amsmath}
+    \usepackage{algorithm}
+    \usepackage[noend]{algpseudocode}
+    \usepackage{subcaption}
+    \usepackage[english]{babel}	
+    \usepackage{paralist}	
+    \usepackage[lowtilde]{url}
+    \usepackage{fixltx2e}
+    \usepackage{listings}
+    \usepackage{color}
+    \usepackage{hyperref}
+    \usepackage{multicol}
+%  Configuration from https://blog.csdn.net/simple_the_best/article/details/52710830 
+    \usepackage{listings}
+    \usepackage{xcolor}
+    \usepackage[utf8]{inputenc}
+%   Configuration from https://tex.stackexchange.com/questions/84722/slight-change-in-algorithm
+    \usepackage{booktabs,lipsum}
+    \usepackage{algorithm}
+    \usepackage{algpseudocode}
+    \usepackage{tikz}
+    \usepackage{adjustbox}
+    \usepackage{multirow}
+    \lstset{
+    numbers=left, 
+    numberstyle= \tiny, 
+    keywordstyle= \color{ blue!70},
+    commentstyle= \color{red!50!green!50!blue!50}, 
+    frame=shadowbox, 
+    rulesepcolor= \color{ red!20!green!20!blue!20} ,
+    escapeinside=``, 
+    xleftmargin=2em,xrightmargin=2em, aboveskip=1em,
+    framexleftmargin=2em
+    } 
+%    \usepackage{auto-pst-pdf}
+%    \usepackage{pst-all}
+%    \usepackage{pstricks-add}
+%   Configuration from https://tex.stackexchange.com/questions/381275/drawing-2-ring-network-with-tikz
+    \usetikzlibrary{arrows,decorations.markings}
+    \tikzset{%
+    shape=rectangle, rounded corners,->-/.style={decoration={markings, mark=at position 0.5 with {\arrow{stealth}}},
+                  postaction={decorate}}
     }
-  }
-}
-\end{lstlisting}
-
-
-This algorithm cann't be parallelized over different entries naively using OpenMP because there are certain dependencies among adjacent entries, and different processors writing to the same adjacent entry would cause race conditions. Using mutex locks isn't a good choice either, since there would be a lock for each entry, and the number of entries could be large.
-
-
-However, we show that it's feasible to paralleize this algorithm using MPI, although it's beyond the discussion of this paper. Suppose we have a p*p mesh of processors that could be mapped to entries of matrix. We partition the matrix in blocks so that each entry in one block corresponds to one processor. Each processor reads the entry in signal matrix M, multiply it by the weights in kernel K, and send the (k*k-1) terms respectively to nearby processors. Each processor get (k*k-1) terms, sum them up along with one term from the processor itself, and write it to the entry in outcome matrix that corresponds to this processor. Such design raises no contention, but requires carefulness of programmers. 
-
-\subsection{Gathering-based method}
-For each entry (i, j) in the outcome matrix M, it is affected by k*k neighbour entries in the signal matrix. The kernel, again, could be viewed as the weight of how much the surrounding entry affect this entry. Based on this fact, we gather the terms by multiplying the weighting factors respectively with k*k neighbours in signal matrix M and add them to entry (i, j) in the outcome matrix X.
-We present the pseudo code to illustrate the algorithm.
-
-\begin{lstlisting}
-for each entry [m][n] {
-  float sum = 0.0;
-  for (int i=-k/2; i<= k/2; i++){
-    for (int j=-k/2; j<= k/2; j++){
-      sum += M[m-i][n-j]*K[i][j]
+    %%%%% MACROS %%%%%%
+    \algrenewcommand\Return{\State \algorithmicreturn{} }
+    \algnewcommand{\LineComment}[1]{\State \(\triangleright\) #1}
+    \renewcommand{\thesubfigure}{\roman{subfigure}}
+    \definecolor{codegreen}{rgb}{0,0.6,0}
+    \definecolor{codegray}{rgb}{0.5,0.5,0.5}
+    \definecolor{codepurple}{rgb}{0.58,0,0.82}
+    \definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+    \lstdefinestyle{mystyle}{
+       backgroundcolor=\color{backcolour},  
+       commentstyle=\color{codegreen},
+       keywordstyle=\color{magenta},
+       numberstyle=\tiny\color{codegray},
+       stringstyle=\color{codepurple},
+       basicstyle=\footnotesize,
+       breakatwhitespace=false,        
+       breaklines=true,                
+       captionpos=b,                    
+       keepspaces=true,                
+       numbers=left,                    
+       numbersep=5pt,                  
+       showspaces=false,                
+       showstringspaces=false,
+       showtabs=false,                  
+       tabsize=2
     }
-  }
-  X[m,n] = sum;
-}
+    \lstset{style=mystyle}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% }
+
+%%%%%%%%%%%%%%%%%%%%%%%% CHANGE HERE %%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% {
+\newcommand\course{CS 121}
+\newcommand\courseName{Parallel Computing}
+\newcommand\semester{SPRING 2020}                        % <-- ASSIGNMENT #
+\newcommand\studentName{Yiwei YANG}                  % <-- YOUR NAME
+\newcommand\studentEmail{yangyw@shanghaitech.edu.cn}          % <-- YOUR NAME
+\newcommand\studentNumber{2018533218}                % <-- STUDENT ID #
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% }
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%% DO NOT CHANGE HERE %%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%{
+
+    \ShortHeadings{ShanghaiTech University -  \course ~~ \courseName}{\studentName - \studentNumber}
+    \firstpageno{1}
+    
+    \begin{document}
+    
+    \title{Cuckoo Hashing Cuda Lab}
+    
+    \author{\name \studentName \email \studentEmail \\
+    \studentNumber
+    \addr
+    }
+    
+    \maketitle
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% }
+                                                                                       
+
+
+\section{The introduction of cuckoo hashing}
+
+Hash table, one of the most fundamental data structure, have been implemented on Graphics Processing Units (GPUs) to accelerate a wide range of data analytics workloads. Most of the existing works focus on the static scenario and try to occupy as much GPU device memory as possible for maximizing the insertion efficiency. In many cases, the data stored in the hash table gets updated dynamically and existing approaches takes unnecessarily large memory resources, which tend to exclude data from concurrent programs to coexist on the device memory. In this paper, we design and implement a dynamic hash table on GPUs with special consideration for space efficiency. To ensure the insertion performance under high filled factor, a novel coordination strategy is proposed for resolving massive thread conflicts.
+\subsection{The challenge of Cuckoo Hashing in GPU}
+\begin{enumerate}
+    \item The aim of a universal hash function set is to distribute the input keys into random entries of a hash table uniformly. The nearly random accessing to memory actually destroy the space locality within the warp which contains the consecutive threads, which makes it hard to manipulate shared memory and cause high hit missing rate of cache.
+    \item Cuckoo hashing is a variant of open addressing hashing method, the addressing iteration could introduce much divergence between threads in a warp. With the increasing of load factor of a hash table, the probability of the thread divergence grows quickly either.
+    \item As for a cuckoo hashing table with only two hashing function, any multiple loops in a connected component could lead a failure. For any failure, the original algorithm invokes a rehashing, which could be painful with high expected cost. Besides, we don't double the size of the hash table while rehashing, which can not guarantee the rehashing to work and it will interrupt all working thread.
+\end{enumerate}
+
+\subsection{The Algorithm of Cuckoo Hashing in GPU}
+I proposed the cuckoo hashing in \cite{zhou2015massively}.
+\begin{figure}
+    \centering
+  
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{./algorithm.png}
+    \caption{Parallel cuckoo hashing on a GPU}
+  \end{figure}
+\section{Environment Setup}
+\begin{enumerate}
+    \item NVIDIA V100, CUDA 11.0
+    \item The software is cross platform, tested on MSCV on windows, clang on mac and icc on linux.
+    \item Deploy Mersenne Twister 19937 generator to generate random integers.
+\end{enumerate}
+To deploy the project, just 
+
+
+\lstset{language=bash}
+\begin{lstlisting}
+    mkdir build 
+    cd build 
+    cmake ..
+    make 
 \end{lstlisting}
+./CuckooHashing.
+\section{Experiment}
+\subsection{Experiment 1}
 
+    \begin{tabular}{|c|c|c|}
+        \hline  
+      Cuckoo Hashing  & Insertion size  &  Performance \\
+        \hline   
+        & $ 2^{1}  $ &  1.665 ms\\
+        & $ 2^{2}  $ &  2.291 ms\\
+        & $ 2^{3}  $ &  4.257 ms\\
+        & $ 2^{4}  $ &  2.616 ms\\
+        & $ 2^{5}  $ &  3.858 ms\\
+        & $ 2^{6}  $ &  2.589 ms\\
+        & $ 2^{7}  $ &  2.315 ms\\
+        & $ 2^{8}  $ &  9.164 ms\\
+        & $ 2^{9}  $ &  4.281 ms\\
+        & $ 2^{10}  $ & 2.742 ms \\
+        & $ 2^{11}  $ & 2.676 ms\\
+        & $ 2^{12}  $ & 4.700 ms\\
+        & $ 2^{13}  $ & 7.928 ms\\
+        & $ 2^{14}  $ & 2.405 ms\\
+        & $ 2^{15}  $ & 5.150 ms\\
+        & $ 2^{16}  $ & 7.061 ms\\
+        & $ 2^{17}  $ & 6.978 ms\\
+        & $ 2^{18}  $ & 6.582 ms\\
+        & $ 2^{19}  $ & 6.653 ms\\
+        & $ 2^{20}  $ & 9.412 ms\\
+        & $ 2^{21}  $ & 15.54 ms\\
+        & $ 2^{22}  $ & 25.42 ms\\
+        & $ 2^{23}  $ & 43.83 ms\\
+        & $ 2^{24}  $ & 115.5 ms\\
+        \hline  
 
-This algorithm, unlike the above one, could be parallelized using OpenMP. Because each processor reads from different entries but only writes to the entry that it has exclusive access to, there won't be data races.
+    \end{tabular}
+    
+    Here the performance is quite competitive compared to many public benchmark. With the scale of insertion increasing, the inserting speed will go up (Better Occupancy) and finally go down (the high load factor of hash table introduce too much collision).
+\subsection{Experiment 2}
+\begin{tabular}{|c|c|c|}
+    \hline  
+    Cuckoo Hashing  & percentile  &  Performance \\
+      \hline  
+      & $ S_{0}  $ & 25.062000 ms \\
+      & $ S_{1}  $ & 24.761000 ms \\
+      & $ S_{2}  $ & 24.801001 ms \\
+      & $ S_{3}  $ & 24.785999 ms \\
+      & $ S_{4}  $ & 24.948999 ms \\
+      & $ S_{5}  $ & 25.292000 ms \\
+      & $ S_{6}  $ & 25.968000 ms \\
+      & $ S_{7}  $ & 24.972000 ms \\
+      & $ S_{8}  $ & 24.790001 ms \\
+      & $ S_{9}  $ & 25.865000 ms \\
+      & $ S_{10}  $& 24.771000 ms \\
+      \hline  
 
-\subsection{Comparison between two methods}
+  \end{tabular}
 
-Beside different parallizing techniques, we show that the two algorithm present different spatial locality towards reading from the signal matrix and writing to the outcome matrix.
+  Since the lookup operation exactly take $O(1)$ time, here are no obvious difference for random input or existed keys. Besides, here indicates the drawback of my design, the lookup time cost is nearly close to the insert operation, the extra cost is introduced by my auxiliary linear probing table, since it may lead to traverse all the auxiliary table in the worst case.
 
-\paragraph{Reading from the signal matrix}
-Propagation-based method has a better behaviour when reading from the signal matrix. At each iteration, one processor only reads one entry from the signal matrix. However, the Gathering-based method, unfortunately, has to read all the k*k neighbours in the signal matrix. 
+  \subsection{Experiment 3}
+  \begin{tabular}{|c|c|c|}
+    \hline  
+    Cuckoo Hashing  & Ratios &  Performance \\
+      \hline  
+      & 1.9  & 38.073002 ms \\
+      & 1.8  & 23.381001 ms \\
+      & 1.7  & 23.188999 ms \\
+      & 1.6  & 25.606001 ms \\
+      & 1.5  & 23.326000 ms \\
+      & 1.4  & 21.899000 ms \\
+      & 1.3  & 24.674999 ms \\
+      & 1.2  & 23.295000 ms \\
+      & 1.1  & 24.481001 ms \\
+      & 1.05 & 24.409000 ms \\
+      & 1.02 & 30.268000 ms \\
+      & 1.01 & 23.343000 ms \\
+      \hline  
 
-\paragraph{Writing to the outcome matrix}
-Gathering-based method has a better behaviour when writing to the outcome matrix. At each iteration, one processor only writes one entry to the outcome matrix. However, the Propagation-based method, unfortunately, has to send the terms to all the k*k adjacent processors. 
+  \end{tabular}
 
-\section{EVALUATION} 
-This section presents the evaluation results for matrix convolution using OpenMP, for the simplicity of discussion, we choose the kernel matrix to be common Gaussian matrix, but any matrix works fine.
-\subsection{Basic Performance Evaluation}
-Figure 2 shows the benchmark of the Gaussian Blur program using OpenMP. Higher speedup is better. Our test is based on a 4 core 8 thread cpu which is intel i7 6700. Due to the speed for the Gaussian Bluer with small kernel with is too fast, we do the same convolution for 10 times and calculate the total time.
+The experiment result reveal the rules of efficiency of hashing: low load factor leads to better performance.
 
+\subsection{Experiment 4}
 
-    OpenMP have 4 (runtime is just a selector) kinds of loop scheduling. For the reason that schedule(auto) is delegated to the compiler, we decided to test our Gaussian Blur program with schedule(static), schedule(dynamic) and schedule(guided). In OpenMP, static schedule divides the loop into chunks as equally as possible. Dynamic schedule uses Use the internal work queue to give a chunk-sized block of loop iterations to each thread. When a thread is finished, Dynamic schedule retrieves the next block of loop iterations from the top of the work queue. Finally, guided schedule is similar to dynamic scheduling while the chunk size starts off large and decreases to better handle load imbalance between iterations.
-\subsection{Data Dependency}
-As mentioned above, there are two algorithms to implement parallel Gaussian Blur program. The algorithm using OpenMP calculates the new color for the new image independently from one corner to the corner opposite. In this algorithm, we calculate the Gaussian kernel before processing the image. During the parallel part, every thread only needs the data from the original image and data from the Gaussian kernel, so data in each thread is independent. Therefore, there is no need to add any lock in the code.
+\begin{tabular}{|c|c|c|}
+    \hline  
+    Cuckoo Hashing  & Bound  &  Performance \\
+      \hline  
+      & 0  & 39.252998 ms \\
+      & 1  & 25.014999 ms \\
+      & 2  & 25.364000 ms \\
+      & 3  & 29.417999 ms \\
+      & 4  & 24.982000 ms \\
+      & 5  & 28.659000 ms \\
+      & 6  & 24.945000 ms \\
+      & 7  & 24.924000 ms \\
+      & 8  & 24.877001 ms \\
+      & 9  & 24.905001 ms \\
+      & 10 & 26.068001 ms \\
+      \hline  
 
-\begin{figure}[h]
- \centering
- \includegraphics[width=3.4in]{1.PNG}
- \caption{Evaluation of performance}
- \end{figure}
+  \end{tabular}
 
-\subsection{Effect of different dataset  size}
-The size of the dataset in our program is determined by the width of the gaussian kernel. Figure 2 shows the speed up of OpenMP (static,dynamic,guided) with gaussian kernel width varying from 2 to 32 using 8 threads. As we can see in the figure, the speedup keeps rising until the kernel width is larger than 16, and dynamic scheduling always achieves the greatest speed up. For those tests with kernel width smaller than 16, we think that the execution time of parallel part does not account for a large proportion in total execution time. For tests with kernel width larger than 16, the difference between the amount of calculation of middle pixels and edges pixels becomes obvious. As a result, dynamic scheduling still achieves good speedup. What's more, the total work of tests with gaussian kernel width larger than 16 may be a little bit 'heavy' to the operating system, so the system may not give 100\% resource to our program to ensure that other running processor works well. That may lead to the slow down of the speedup.
-
-\begin{figure}[h]
- \centering
- \includegraphics[width=3.4in]{3.png}
- \caption{Speedup using different kernel sizes}
- \end{figure}
-\subsection{Effect of different number of threads}
-For the reason that tests with kernel width 16 achieves the greatest speed up, we tested it with 2,4,8 threads. For 8 threads, the maximum speed up is 5.9. For 4 threads, the maximum speedup is 3.41 which is much closer to the number of threads used. This phenomenon many depend on the physical structure of our cpu (4 cores 8 threads). As we have learnt from the class, multithreading is a technic which aims for making full use of the cores' computation resources. It means that the ability of a single thread using multithreading is not as good as that without multithreading. Let's move on. The maximum speedup of 2 threads is almost 2. For a system using 4 cores , it is easy for it to give a program full resources of 2 threads, this might be the reason why our tests with 2 threads achieve 'super' speedup.
- \begin{figure}[h]
- \centering
- \includegraphics[width=3.5in]{2.PNG}
- \caption{Speedup using different number of threads}
- \end{figure}
-
-
-
-
-\addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
-                                  % on the last page of the document manually. It shortens
-                                  % the textheight of the last page by a suitable amount.
-                                  % This command does not take effect until the next page
-                                  % so it should come on the page before the last. Make
-                                  % sure that you do not shorten the textheight too much.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{APPENDIX}
-
-The source code for this project is available at https://github.com/RunningCool/openmp\_convolution.
-
-\section*{ACKNOWLEDGMENT}
-
-We thanks the teaching staff and students of CS121 for the support and patience.
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-\begin{thebibliography}{99}
-
-\bibitem{c1} Example shown in computer vision course, 2016
-\bibitem{c2} A. Oliva, A. Torralba, P.G. Schyns, 
-“Hybrid Images,” SIGGRAPH 2006
-
-
-
-
-
-\end{thebibliography}
-
+The result of this experiment of mine would be quite different to others. Here you can see the lower bound lead to better performance, which is actually promised by the auxiliary. Most elements will be successfully hashed to proper position at the first time, it's the long tail effect, the lower bound we set, the less divergence in warp either. However, it can't be too small as the auxiliary table can't be too large.
+\vskip 0.2in
+\bibliography{references} 
 
 
 
