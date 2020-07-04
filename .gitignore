@@ -2,3 +2,7 @@
 cmake*
 build
 .vscode
+report/report.aux
+report/report.log
+report/report.synctex.gz
+
