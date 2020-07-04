@@ -32,48 +32,18 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CUDA_ARCH}")
 ## To specify which function is the tested one  ##
 ##################################################
 
-
-IF (CUCKOO_MUL_CPU)
-    option(CUCKOO_MUL_CPU "select to use specified function" ON)
-    add_definitions(-DCUCKOO_MUL_CPU)
-    find_package(OpenMP REQUIRED)
-    # Backwards compatibility
-    message(STATUS "MPI acceleration is ON")
-ELSEIF (CUCKOO_GPU)
-    option(CUCKOO_GPU "select to use specified function" ON)
-    add_definitions(-DCUCKOO_GPU)
-    message(STATUS "GPU acceleration is ON")
-ELSEIF (CUCKOO_MUL_GPU)
-    option(CUCKOO_MUL_GPU "select to use specified function" ON)
-    add_definitions(-DCUCKOO_MUL_GPU)
-    message(STATUS "Multi-level GPU acceleration is ON")
-ENDIF ()
-
 IF (DEBUG)
     option(DEBUG "select to use specified function" ON)
     message(STATUS "DEBUG is ${DEBUG}")
     add_definitions(-DDEBUG)
 ENDIF ()
 
-IF (DEMO)
-    option(DEMO "select to use specified function" ON)
-    message(STATUS "DEMO is ${DEMO}")
-    add_definitions(-DDEMO)
-ENDIF ()
-
-IF (PERF)
-    option(PERF "select to use specified function" ON)
-    message(STATUS "PERF is ${PERF}")
-    add_definitions(-DPERF)
-ENDIF ()
-
 ###############
 # source code #
 ###############
 
-set(CUDA_SRCS src/demo.cu)
-# set(CUDA_SRCS src/cuckoo.cu)
-set(CXX_CUDA_HDR include/cudaHeaders.h include/mt19937ar.h)
+set(CXX_SRCS src/mt19937ar.cpp)
+set(CXX_CUDA_HDR include/cudaHeaders.h)
 cuda_add_library(kernel_obj src/cuckoo.cu)
 
 ################
