@@ -82,3 +82,76 @@ Let ratios be 1.4 and bound 7 we can get:Total time : 24.924000 ms   to insert.
 Let ratios be 1.4 and bound 8 we can get:Total time : 24.877001 ms   to insert.
 Let ratios be 1.4 and bound 9 we can get:Total time : 24.905001 ms   to insert.
 Let ratios be 1.4 and bound 10 we can get:Total time: 26.068001 ms   to insert.
+
+
+Random number generator seed = 3418288794
+ --- General Information for device 0 ---
+Name: GeForce RTX 2070 with Max-Q Design
+Compute capability: 7.5
+Clock rate: 1185000
+Device copy overlap: Enabled
+Kernel execition timeout : Enabled
+   --- Memory Information for device 0 ---
+Total global mem:  0
+Total constant Mem:  65536
+Max mem pitch:  2147483647
+Texture Alignment:  512
+   --- MP Information for device 0 ---
+Multiprocessor count:  36
+Shared mem per mp:  49152
+Registers per mp:  65536
+Threads in warp:  32
+Max threads per block:  1024
+Max thread dimensions:  (1024, 1024, 64)
+Max grid dimensions:  (2147483647, 65535, 65535)
+
+experiment 1
+Total time (including memory copies, readback, etc): 170.878998 ms for 2^0 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 14.299000 ms for 2^1 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 14.733000 ms for 2^2 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 14.516000 ms for 2^3 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 14.671000 ms for 2^4 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 14.390000 ms for 2^5 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 14.355000 ms for 2^6 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 14.364000 ms for 2^7 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 14.628000 ms for 2^8 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 14.562000 ms for 2^9 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 14.693000 ms for 2^10 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 14.388000 ms for 2^11 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 15.111000 ms for 2^12 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 14.805000 ms for 2^13 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 15.299000 ms for 2^14 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 15.142000 ms for 2^15 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 14.971000 ms for 2^16 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 15.728000 ms for 2^17 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 17.733999 ms for 2^18 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 20.188000 ms for 2^19 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 23.966000 ms for 2^20 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 32.979000 ms for 2^21 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 47.973000 ms for 2^22 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 82.578003 ms for 2^23 random integers to 2^25 hash table
+Total time (including memory copies, readback, etc): 194.494003 ms for 2^24 random integers to 2^25 hash table
+experiment 3
+Let ratios be 1.9 and we can get:Total time : 33.840000 ms for to insert.
+Let ratios be 1.8 and we can get:Total time : 31.379000 ms for to insert.
+
+'CuckooHashing.exe' (Win32): Loaded 'C:\WINDOWS\System32\DriverStore\FileRepository\nvgb.inf_amd64_c128c16c3b53d20d\nvptxJitCompiler64.dll'. Module was built without symbols.
+CUDART API Error
+    Function: cudaMalloc
+    Error   : cudaErrorMemoryAllocation(2)
+    Desc    : out of memory
+CUDART API Error
+    Function: cudaMemcpy
+    Error   : cudaErrorInvalidValue(1)
+    Desc    : invalid argument
+
+0x0000000b0099cb50               SHFL.IDX PT, R27, R23, R0, 0x1f  
+0x0000000b0099cb60               LDS.U R0, [R18.X4+UR36]  <-
+0x0000000b0099cb70               IMAD.WIDE.U32 R4, R27, -0x7ffffffd, RZ  
+0x0000000b0099cb80               SHF.R.U32.HI R10, RZ, 0x1f, R5  
+0x0000000b0099cb90               SHFL.IDX PT, R29, R25, R0, 0x1f  
+0x0000000b0099cba0               SHF.R.U32.HI R8, RZ, 0x5, R3  
+0x0000000b0099cbb0               ISETP.NE.U32.AND P1, PT, R8, RZ, PT  
+0x0000000b0099cbc0               IMAD.MOV R9, RZ, RZ, -R8  
+0x0000000b0099cbd0               I2F.U32.RP R3, R8  
+0x0000000b0099cbe0               MUFU.RCP R3, R3  

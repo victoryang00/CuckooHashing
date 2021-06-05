@@ -1,18 +1,20 @@
-#include "cuckoo.cuh"
+#include "cuckoo.cu"
 #include <algorithm>
 #include <chrono>
 #include <random>
 #include <stdint.h>
 #include <stdio.h>
 #include <vector>
-#include "cudaHeaders.h"
 #include <random>
 #include <algorithm>
 
 using namespace std;
 
+#if _MSC_VER >= 1900
+using Time = std::chrono::steady_clock::time_point;
+#else
 using Time = std::chrono::_V2::system_clock::time_point;
-
+#endif
 Time start_timer() 
 {
     return std::chrono::high_resolution_clock::now();
@@ -100,36 +102,28 @@ for(int s=0;s<25;s++){
             tmp++;
         }
     }
-
-    delete[] key1;
-    delete[] value1;
-    delete[] search1;
-    delete[] chck1;
 }
+#if _MSC_VER < 1900
     cout<<"experiment 2"<<endl;
-
+#endif
         int size = pow(2, 24);
         auto *key = new uint32_t[size];
         auto *value = new uint32_t[size];
         auto *search = new uint32_t[size];
         auto *chck = new uint32_t[size];
+#if _MSC_VER < 1900
         generate_random_keyvalues(rnd, size, value);
         generate_random_keyvalues(rnd, size, key);
         for (int percent = 0; percent <= 10; ++percent) {
             int bound = ceil((1 - 0.1 * percent) * size);
-                // printf("sb");
+                printf("sb");
                 for (int i = 0; i < bound; ++i) {
                     chck[i] = value[rand() % size];
-                    // cout << chck[i] << " ";
                 }
                 generate_random_keyvalues(rnd, size, chck+bound);
 
-                // for(int k=0;k<sizeof(chck)/sizeof(uint32_t);k++){
-                //     cout<<chck[k]<<" ";
-                // }
                 std::cout <<"Let percentile be" << " " << percent << " and we can get:";
                 CuckooHashing h(input_size);
-                // printf("sb");
                 h.hash_insert(key, value, size);
                 
                 Time timer = start_timer();
@@ -139,7 +133,7 @@ for(int s=0;s<25;s++){
                        "insert.\n",
                        milliseconds, percent);
         }
-
+#endif
     cout<<"experiment 3"<<endl;
 
     int n = pow(2, 24);
@@ -149,13 +143,16 @@ for(int s=0;s<25;s++){
     auto *value2 = new uint32_t[size];
     auto *search2 = new uint32_t[size];
     auto *chck2 = new uint32_t[size];
+#if _MSC_VER < 1900
     for (int ri = 0; ri < 12; ++ri) {
+#else
+    for (int ri = 0; ri < 2; ++ri) {
+#endif
         int size = ceil(ratios[ri] * n);
 
         std::cout << "Let ratios be"
                   << " " << ratios[ri] << " and we can get:";
         CuckooHashing h(size);
-        // printf("sb");
         h.hash_insert(key2, value2, n);
 
         Time timer = start_timer();
@@ -165,11 +162,7 @@ for(int s=0;s<25;s++){
                "insert.\n",
                milliseconds);
     }
-    // delete[] key;
-    // delete[] value;
-    // delete[] search;
-    // delete[] chck;
-    
+#if _MSC_VER < 1900
     cout<<"experiment 4"<<endl;
     int size4 = ceil(1.4 * n);
     auto *key4 = new uint32_t[size4];
@@ -182,7 +175,6 @@ for(int s=0;s<25;s++){
         int bound = ceil((1 - 0.1 * percent) * size4);
         for (int i = 0; i < bound; ++i) {
             chck4[i] = value4[rand() % size4];
-            // cout << chck[i] << " ";
         }
         generate_random_keyvalues(rnd, size4, chck4 + bound);
         printf("Let ratios be 1.4 and bound %d we can get:", percent);
@@ -196,10 +188,6 @@ for(int s=0;s<25;s++){
                "insert.\n",
                milliseconds);
     }
-
-    // delete[] key;
-    // delete[] value;
-    // delete[] search;
-    // delete[] chck;
+#endif
     return 0;
 }

@@ -1,10 +1,12 @@
 cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
-#ifdef(WIN32)
-set(CMAKE_CUDA_COMPILER "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.0/bin/nvcc.exe")
-#elif(UNIX)
-set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
-include_directories(/usr/local/cuda/include)
-#endif
+
+if(WIN32)
+    set(CMAKE_CUDA_COMPILER "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.1/bin/nvcc.exe")
+else()
+    set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
+    include_directories(/usr/local/cuda/include)
+endif()
+
 project(CuckooHashing LANGUAGES CUDA CXX)
 find_package(CUDA REQUIRED)
 
@@ -42,16 +44,12 @@ ENDIF ()
 # source code #
 ###############
 
-set(CXX_SRCS src/mt19937ar.cpp)
-set(CXX_CUDA_HDR include/cudaHeaders.h)
 cuda_add_library(kernel_obj src/cuckoo.cu)
 
 ################
 # main program #
 ################
-include_directories(./include)
-add_executable(${PROJECT_NAME} ${CXX_SRCS} ${CXX_CUDA_HDR} ${CUDA_SRCS} src/main.cu)
-target_link_libraries(${PROJECT_NAME} kernel_obj)
+add_executable(${PROJECT_NAME} src/cuckoo.cu src/main.cu)
 set_target_properties(${PROJECT_NAME} PROPERTIES
         LINKER_LANGUAGE CXX
         CUDA_SEPARABLE_COMPILATION ON
